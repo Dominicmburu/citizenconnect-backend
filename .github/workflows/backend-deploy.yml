@@ -1,0 +1,61 @@
+name: Deploy Backend to EC2
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set Up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install Dependencies
+        working-directory: backend
+        run: npm install
+
+      - name: Run Tests
+        working-directory: backend
+        run: npm test
+
+  build:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Build Docker Image
+        run: |
+          docker build -t backend-api ./backend
+
+      - name: Push Docker Image to AWS ECR
+        run: |
+          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ secrets.ECR_URL }}
+          docker tag backend-api ${{ secrets.ECR_URL }}/backend-api:latest
+          docker push ${{ secrets.ECR_URL }}/backend-api:latest
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Connect to EC2 and Deploy
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            docker pull ${{ secrets.ECR_URL }}/backend-api:latest
+            docker stop backend-api || true
+            docker rm backend-api || true
+            docker run -d --name backend-api -p 5000:5000 --env-file /home/ubuntu/.env ${{ secrets.ECR_URL }}/backend-api:latest

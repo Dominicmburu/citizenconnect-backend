@@ -1,0 +1,80 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+enum Role {
+  ADMIN
+  CITIZEN
+  OFFICIAL
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  email     String   @unique
+  password  String
+  role      Role     @default(CITIZEN)
+  salt      String
+  incidents Incident[]
+  feedback  Feedback[]
+  documents Document[]
+}
+
+model Incident {
+  id        Int      @id @default(autoincrement())
+  title     String
+  description String
+  mediaUrl  String? 
+  location    String
+  status      String   @default("reported")
+  createdAt DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Poll {
+  id        Int      @id @default(autoincrement())
+  question     String
+  options   String[] 
+  votes     Int[]    
+  type        String   @default("radio")
+  createdAt DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  endDate     DateTime
+  voters     Int[]     @default([])
+}
+
+model Document {
+  id          Int      @id @default(autoincrement())
+  title       String   
+  description String   
+  fileUrl     String   
+  createdAt   DateTime @default(now())
+  uploadedBy  Int
+  user        User     @relation(fields: [uploadedBy], references: [id])  
+}
+
+model Topic {
+  id          Int       @id @default(autoincrement())
+  title       String
+  description String
+  createdAt   DateTime  @default(now())
+  feedbacks   Feedback[]
+}
+
+model Feedback {
+  id        Int      @id @default(autoincrement())
+  message   String
+  createdAt DateTime @default(now())
+  userId    Int
+  topicId   Int
+  user      User     @relation(fields: [userId], references: [id])
+  topic     Topic    @relation(fields: [topicId], references: [id])
+}
