@@ -73,8 +73,11 @@ RUN A SPECIFIC CONTAINER
 docker run --name backend_container -p 5000:5000 backend
 
 
-CHECK RUN COTAINER
+CHECK RUNNING COTAINER
 docker ps
+
+CHECK IF THERE EXIST CONTAINERS
+ docker ps -a
 
 CREATE DATABASE
 docker run --name postgres_db -e POSTGRES_USER=user -e POSTGRES_PASSWORD=pass -e POSTGRES_DB=connect360 -p 5432:5432 -d postgres
