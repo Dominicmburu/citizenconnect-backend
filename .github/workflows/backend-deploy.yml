@@ -22,12 +22,19 @@ jobs:
         run: docker push ${{ secrets.DOCKER_USERNAME }}/backend:latest
 
   deploy:
-    runs-on: [aws-ec2]
+    # runs-on: [aws-ec2]
+    runs-on: self-hosted
     needs: build
     steps:
-      - name: Pull image from docker hub
-        run: docker pull backend:latest
-      - name: Delete old container
-        run: docker rm -f backend-container
-      - name: Run docker container
-        run: docker run -d -p 5000:5000 -name backend-container backend
+      - name: Login to Docker Hub (again, in EC2)
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+      - name: Pull Image from Docker Hub
+        run: docker pull ${{ secrets.DOCKER_USERNAME }}/backend:latest
+
+      - name: Stop and Remove Old Container (if exists)
+        run: |
+          docker ps -q --filter "name=backend-container" | grep -q . && docker stop backend-container && docker rm backend-container || echo "No old container found."
+
+      - name: Run Docker Container
+        run: docker run -d -p 5000:5000 --name backend-container ${{ secrets.DOCKER_USERNAME }}/backend:latest
