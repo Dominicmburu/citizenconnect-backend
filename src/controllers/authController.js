@@ -33,6 +33,7 @@ const registerUser = async (req, res) => {
         email,
         password: hashedPassword,
         role: "CITIZEN",
+        // role: "ADMIN",
         salt,
       },
     });
