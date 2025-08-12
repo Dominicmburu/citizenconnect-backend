@@ -1,6 +1,7 @@
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url      = "postgresql://citizenconnect_gedion:gedion1234@localhost:5432/citizenconnect_db?schema=public"
+  // url      = env("DATABASE_URL")
 }
 
 generator client {
